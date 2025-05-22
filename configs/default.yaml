@@ -1,0 +1,19 @@
+# Configuration for training
+data:
+  json_path: data/nutrition5k_multiview.json
+  num_views: 3
+  apply_sam: false
+  sam_model_type: vit_h
+  sam_ckpt_path: sam_vit_h.pth  # You must provide this manually
+
+training:
+  batch_size: 8
+  num_epochs: 20
+  learning_rate: 1e-4
+
+model:
+  backbone: efficientnet_b0  # Future use
+  use_transformer: true
+
+output_dir: outputs/
+device: cuda
