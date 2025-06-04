@@ -1,12 +1,13 @@
 import os
 import json
 import random
-from typing import List, Dict
 import numpy as np
 from PIL import Image
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
+import re
+from collections import defaultdict
 
 try:
     from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
@@ -15,6 +16,10 @@ except ImportError:
 
 class NutritionDataset(Dataset):
     def __init__(self, json_path: str, num_views: int = 3, apply_sam: bool = False, sam_model_type="vit_h", sam_ckpt_path=None):
+        # Usar JSON segmentado si apply_sam está activado
+        if apply_sam and "sam_segmented" not in json_path:
+            json_path = json_path.replace("nutrition5k_multiview.json", "nutrition5k_sam_segmented.json")
+
         with open(json_path, 'r') as f:
             self.data = json.load(f)
 
@@ -26,9 +31,18 @@ class NutritionDataset(Dataset):
         ])
 
         self.sam_generator = None
-        if self.apply_sam and sam_model_registry is not None and sam_ckpt_path:
-            sam = sam_model_registry[sam_model_type](checkpoint=sam_ckpt_path)
-            self.sam_generator = SamAutomaticMaskGenerator(sam)
+        if self.apply_sam and sam_model_registry is not None and sam_ckpt_path and os.path.exists(sam_ckpt_path):
+            try:
+                sam = sam_model_registry[sam_model_type](checkpoint=sam_ckpt_path)
+                sam.to("cuda")
+                self.sam_generator = SamAutomaticMaskGenerator(sam)
+                print("✅ SAM generator loaded")
+                print("🔧 SAM running on:", next(sam.parameters()).device)
+            except Exception as e:
+                print("❌ Failed to initialize SAM:", e)
+        else:
+            if self.apply_sam:
+                print("⚠️ SAM enabled but generator not initialized — assuming pre-segmented images.")
 
     def __len__(self):
         return len(self.data)
@@ -36,23 +50,15 @@ class NutritionDataset(Dataset):
     def __getitem__(self, idx):
         item = self.data[idx]
         images_paths = item['images']
-        random.shuffle(images_paths)
+        selected_paths = images_paths[:self.num_views]
 
-        if len(images_paths) >= self.num_views:
-            selected_paths = images_paths[:self.num_views]
-        else:
-            selected_paths = images_paths * (self.num_views // len(images_paths)) + images_paths[:self.num_views % len(images_paths)]
+        while len(selected_paths) < self.num_views:
+            selected_paths.append(selected_paths[-1])
 
         processed_images = []
 
         for path in selected_paths:
             img = Image.open(path).convert("RGB")
-            if self.apply_sam and self.sam_generator:
-                masks = self.sam_generator.generate(np.array(img))
-                if masks:
-                    mask = masks[0]['segmentation']
-                    img = Image.fromarray(np.array(img) * mask[:, :, None])
-
             img = self.transform(img)
             processed_images.append(img)
 

@@ -4,7 +4,7 @@ import timm
 
 # Backbone CNN using EfficientNet (or any model from timm)
 class CNNBackbone(nn.Module):
-    def __init__(self, output_dim=512, model_name="efficientnet_b0"):
+    def __init__(self, output_dim=512, model_name="efficientnet_b4"):
         super().__init__()
         self.encoder = timm.create_model(model_name, pretrained=True, num_classes=0)
         self.projector = nn.Linear(self.encoder.num_features, output_dim)
@@ -25,7 +25,7 @@ class CrossViewTransformer(nn.Module):
 
 # Full multiview nutrition estimation model
 class NutritionEstimator(nn.Module):
-    def __init__(self, feat_dim=512, num_outputs=5, backbone_name="efficientnet_b0"):
+    def __init__(self, feat_dim=512, num_outputs=4, backbone_name="efficientnet_b4"):
         super().__init__()
         self.backbone = CNNBackbone(output_dim=feat_dim, model_name=backbone_name)
         self.cross_view = CrossViewTransformer(dim=feat_dim)
