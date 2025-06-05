@@ -32,8 +32,11 @@ def build_json():
                 except ValueError:
                     continue
 
-    # 2. Find images
+    from collections import defaultdict
+    import re
+
     records = []
+
     for dish_folder in os.listdir(images_dir):
         frames_path = os.path.join(images_dir, dish_folder, "frames_sampled30")
 
@@ -44,19 +47,31 @@ def build_json():
                 if f.lower().endswith(('.jpg', '.jpeg', '.png'))
             ]
 
-            if len(image_files) >= 2:
+            # Agrupar imágenes por letra de cámara
+            camera_groups = defaultdict(list)
+            for path in image_files:
+                match = re.search(r'camera_([A-Z])_', os.path.basename(path))
+                if match:
+                    camera_groups[match.group(1)].append(path)
+
+            # Guardar solo si hay al menos 2 cámaras diferentes
+            if len(camera_groups) >= 2:
+                # Seleccionar una imagen por cámara
+                images_one_per_camera = [group[0] for group in camera_groups.values()]
+                
                 records.append({
                     "dish_id": dish_folder,
-                    "images": image_files,
+                    "images": images_one_per_camera,
                     **dish_data[dish_folder]
                 })
+
 
     # 3. Write JSON
     os.makedirs(BASE_DIR, exist_ok=True)
     with open(output_json, 'w') as f:
         json.dump(records, f, indent=2)
 
-    print(f"✅ Created: {output_json} with {len(records)} dishes")
+    print(f"Created: {output_json} with {len(records)} dishes")
 
 if __name__ == "__main__":
     build_json()

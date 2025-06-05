@@ -20,7 +20,7 @@ def collate_fn(batch):
 
 def evaluate(model, loader, device):
     model.eval()
-    mse_scores = {k: [] for k in ['calories', 'carbs', 'protein', 'fat', 'weight']}
+    mse_scores = {k: [] for k in ['calories', 'carbs', 'protein', 'fat']}
     mae_scores = {k: [] for k in mse_scores}
 
     with torch.no_grad():
@@ -77,7 +77,7 @@ def main():
 
         for images, targets in train_loader:
             images = images.to(device)
-            labels = torch.stack([targets[k] for k in ['calories', 'carbs', 'protein', 'fat', 'weight']], dim=1).to(device)
+            labels = torch.stack([targets[k] for k in ['calories', 'carbs', 'protein', 'fat']], dim=1).to(device)
 
             optimizer.zero_grad()
             outputs = model(images)
