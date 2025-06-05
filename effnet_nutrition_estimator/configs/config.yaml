@@ -1,0 +1,20 @@
+# config.yaml
+
+paths:
+  data_root: "../data/nutrition5k-dataset-side-angle-images/versions/2"
+  metadata_csv: "../data/dish_metadata_cafe.csv"
+  model_checkpoint: "checkpoints/multiview_effnet_b4.pth"
+
+training:
+  batch_size: 4
+  num_epochs: 20
+  learning_rate: 0.0001
+  num_workers: 4
+  input_size: 380  # For EfficientNet-B4
+
+model:
+  backbone: "efficientnet_b4"
+  pretrained: true
+
+device:
+  use_cuda: true
