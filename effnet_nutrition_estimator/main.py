@@ -11,4 +11,4 @@ if __name__ == "__main__":
     if args.mode == "train":
         subprocess.run(["python", "training/train_multiview_effnet.py"])
     elif args.mode == "eval":
-        subprocess.run(["python", "evaluation/eval_multiview_effnet.py"])
+        subprocess.run(["python", "evaluator/eval_multiview_effnet.py"])
